@@ -25,7 +25,7 @@ import VaporRouting
 enum SiteRoute {
     case docs(DocsRoute)
     case home
-    case package(PackageRoute)
+    case package(owner: String, repository: String, route: PackageRoute = .show)
     case `static`(StaticRoute)
 }
 
@@ -42,7 +42,15 @@ enum DocsRoute: String, CaseIterable {
 }
 
 enum PackageRoute {
-    case show(owner: String, repository: String)
+    case show
+    case `static`(StaticPackageRoute)
+}
+
+enum StaticPackageRoute: String, CaseIterable {
+//    case builds
+//    case maintainerInfo
+    case readme
+//    case releases
 }
 
 let siteRouter = OneOf {
@@ -53,18 +61,19 @@ let siteRouter = OneOf {
 
     Route(.case(SiteRoute.home))
 
-    Route(.case(SiteRoute.package)) { packageRouter }
+    Route(.case(SiteRoute.package(owner:repository:route:))) {
+        Path { Parse(.string) }
+        Path { Parse(.string) }
+        packageRouter
+    }
 
     Route(.case(SiteRoute.static)) { Path { StaticRoute.parser() } }
 }
 
 let packageRouter = OneOf {
-    Route(.case(PackageRoute.show(owner:repository:))) {
-        Path {
-            Parse(.string)
-            Parse(.string)
-        }
-    }
+    Route(.case(PackageRoute.show))
+
+    Route(.case(PackageRoute.static)) { Path { StaticPackageRoute.parser() } }
 }
 
 
@@ -79,9 +88,17 @@ func siteHandler(req: Request, route: SiteRoute) async throws -> AsyncResponseEn
             let filename = try siteRouter.print(route).path.joined(separator: "/") + ".md"
             return MarkdownPage(path: req.url.path, filename).document()
 
-        case let .package(.show(owner: owner, repository: repository)):
-            return try await PackageController()
+        case let .package(owner: owner, repository: repository, route: .show):
+            return try await PackageController
                 .show(req: req, owner: owner, repository: repository)
+
+        case let .package(owner: owner, repository: repository, route: .static(.readme)):
+            return try await PackageController
+                .readme(req: req, owner: owner, repository: repository)
+                .get()
+
+//        case let .package(owner: owner, repository: repository, route: .static(_)):
+//            break
 
     }
 }
@@ -92,8 +109,6 @@ func routes(_ app: Application) throws {
 
     do {  // package pages
         let packageController = PackageController()
-        app.get(SiteURL.package(.key, .key, .readme).pathComponents,
-                use: packageController.readme)
         app.get(SiteURL.package(.key, .key, .releases).pathComponents,
                 use: packageController.releases)
         app.get(SiteURL.package(.key, .key, .builds).pathComponents,

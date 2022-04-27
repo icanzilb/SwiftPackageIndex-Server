@@ -17,9 +17,10 @@ import Plot
 import Vapor
 
 
+// TODO: make enum
 struct PackageController {
 
-    func show(req: Request, owner: String, repository: String) async throws -> Response {
+    static func show(req: Request, owner: String, repository: String) async throws -> Response {
         if repository.lowercased().hasSuffix(".git") {
             throw Abort.redirect(to: SiteURL.package(.value(owner),
                                                      .value(repository.droppingGitExtension),
@@ -48,7 +49,7 @@ struct PackageController {
         }
     }
 
-    func readme(req: Request) throws -> EventLoopFuture<Node<HTML.BodyContext>> {
+    static func readme(req: Request, owner: String, repository: String) throws -> EventLoopFuture<Node<HTML.BodyContext>> {
         guard
             let owner = req.parameters.get("owner"),
             let repository = req.parameters.get("repository")
