@@ -36,7 +36,7 @@ enum StaticRoute: String, CaseIterable {
     case tryInPlayground = "try-package"
 }
 
-enum DocsRoute {
+enum DocsRoute: String, CaseIterable {
     case builds
 }
 
@@ -47,15 +47,10 @@ let siteRouter = OneOf {
 
     Route(.case(SiteRoute.docs)) {
         Path { "docs" }
-        docsRouter
+        Path { DocsRoute.parser() }
     }
 }
 
-let docsRouter = OneOf {
-    Route(.case(DocsRoute.builds)) {
-        Path { "builds" }
-    }
-}
 
 func siteHandler(req: Request, route: SiteRoute) async throws -> AsyncResponseEncodable {
     switch route {
