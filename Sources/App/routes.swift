@@ -19,40 +19,60 @@ import Prometheus
 import Vapor
 
 
-func routes(_ app: Application) throws {
-    do {  // home page
-        app.get { req in
-            HomeIndex.Model.query(database: req.db).map {
+import _URLRouting
+import VaporRouting
+
+enum SiteRoute {
+    case addAPackage
+    case docs(DocsRoute)
+    case faq
+    case home
+    case packageCollections
+    case privacy
+    case tryInPlayground
+}
+
+enum DocsRoute {
+    case builds
+}
+
+let siteRouter = OneOf {
+    Route(.case(SiteRoute.home))
+
+    Route(.case(SiteRoute.addAPackage)) { Path { "add-a-package"} }
+    Route(.case(SiteRoute.faq)) { Path { "faq" } }
+    Route(.case(SiteRoute.packageCollections)) { Path { "package-collections" } }
+    Route(.case(SiteRoute.privacy)) { Path { "privacy" } }
+    Route(.case(SiteRoute.tryInPlayground)) { Path { "try-package" } }
+
+    Route(.case(SiteRoute.docs)) {
+        Path { "docs" }
+        docsRouter
+    }
+}
+
+let docsRouter = OneOf {
+    Route(.case(DocsRoute.builds)) {
+        Path { "builds" }
+    }
+}
+
+func siteHandler(req: Request, route: SiteRoute) async throws -> AsyncResponseEncodable {
+    switch route {
+        case .home:
+            return try await HomeIndex.Model.query(database: req.db).map {
                 HomeIndex.View(path: req.url.path, model: $0).document()
-            }
-        }
+            }.get()
+
+        case .addAPackage, .docs(.builds), .faq, .packageCollections, .privacy, .tryInPlayground:
+            let filename = try siteRouter.print(route).path.joined(separator: "/") + ".md"
+            return MarkdownPage(path: req.url.path, filename).document()
     }
+}
 
-    do {  // static pages
-        app.get(SiteURL.addAPackage.pathComponents) { req in
-            MarkdownPage(path: req.url.path, "add-a-package.md").document()
-        }
 
-        app.get(SiteURL.docs(.builds).pathComponents) { req in
-            MarkdownPage(path: req.url.path, "docs/builds.md").document()
-        }
-
-        app.get(SiteURL.faq.pathComponents) { req in
-            MarkdownPage(path: req.url.path, "faq.md").document()
-        }
-
-        app.get(SiteURL.packageCollections.pathComponents) { req in
-            MarkdownPage(path: req.url.path, "package-collections.md").document()
-        }
-
-        app.get(SiteURL.privacy.pathComponents) { req in
-            MarkdownPage(path: req.url.path, "privacy.md").document()
-        }
-
-        app.get(SiteURL.tryInPlayground.pathComponents) { req in
-            MarkdownPage(path: req.url.path, "try-package.md").document()
-        }
-    }
+func routes(_ app: Application) throws {
+    app.mount(siteRouter, use: siteHandler(req:route:))
 
     do {  // package pages
         let packageController = PackageController()
