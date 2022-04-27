@@ -50,7 +50,7 @@ enum StaticPackageRoute: String, CaseIterable {
     case builds
     case maintainerInfo = "information-for-package-maintainers"
     case readme
-//    case releases
+    case releases
 }
 
 let siteRouter = OneOf {
@@ -105,18 +105,17 @@ func siteHandler(req: Request, route: SiteRoute) async throws -> AsyncResponseEn
             return try await PackageController
                 .readme(req: req, owner: owner, repository: repository)
                 .get()
+
+        case let .package(owner: owner, repository: repository, route: .static(.releases)):
+            return try await PackageController
+                .releases(req: req, owner: owner, repository: repository)
+                .get()
     }
 }
 
 
 func routes(_ app: Application) throws {
     app.mount(siteRouter, use: siteHandler(req:route:))
-
-    do {  // package pages
-        let packageController = PackageController()
-        app.get(SiteURL.package(.key, .key, .releases).pathComponents,
-                use: packageController.releases)
-    }
 
     do {  // package collection page
         app.get(SiteURL.packageCollection(.key).pathComponents,
