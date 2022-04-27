@@ -25,6 +25,7 @@ import VaporRouting
 enum SiteRoute {
     case docs(DocsRoute)
     case home
+    case package(PackageRoute)
     case `static`(StaticRoute)
 }
 
@@ -40,14 +41,29 @@ enum DocsRoute: String, CaseIterable {
     case builds
 }
 
+enum PackageRoute {
+    case show(owner: String, repository: String)
+}
+
 let siteRouter = OneOf {
-    Route(.case(SiteRoute.home))
-
-    Route(.case(SiteRoute.static)) { Path { StaticRoute.parser() } }
-
     Route(.case(SiteRoute.docs)) {
         Path { "docs" }
         Path { DocsRoute.parser() }
+    }
+
+    Route(.case(SiteRoute.home))
+
+    Route(.case(SiteRoute.package)) { packageRouter }
+
+    Route(.case(SiteRoute.static)) { Path { StaticRoute.parser() } }
+}
+
+let packageRouter = OneOf {
+    Route(.case(PackageRoute.show(owner:repository:))) {
+        Path {
+            Parse(.string)
+            Parse(.string)
+        }
     }
 }
 
@@ -62,6 +78,11 @@ func siteHandler(req: Request, route: SiteRoute) async throws -> AsyncResponseEn
         case .docs(.builds), .static:
             let filename = try siteRouter.print(route).path.joined(separator: "/") + ".md"
             return MarkdownPage(path: req.url.path, filename).document()
+
+        case let .package(.show(owner: owner, repository: repository)):
+            return try await PackageController()
+                .show(req: req, owner: owner, repository: repository)
+
     }
 }
 
@@ -71,8 +92,6 @@ func routes(_ app: Application) throws {
 
     do {  // package pages
         let packageController = PackageController()
-        app.get(SiteURL.package(.key, .key, .none).pathComponents,
-                use: packageController.show)
         app.get(SiteURL.package(.key, .key, .readme).pathComponents,
                 use: packageController.readme)
         app.get(SiteURL.package(.key, .key, .releases).pathComponents,
