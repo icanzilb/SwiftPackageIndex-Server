@@ -17,8 +17,7 @@ import Plot
 import Vapor
 
 
-// TODO: make enum
-struct PackageController {
+enum PackageController {
 
     static func show(req: Request, owner: String, repository: String) async throws -> Response {
         if repository.lowercased().hasSuffix(".git") {
