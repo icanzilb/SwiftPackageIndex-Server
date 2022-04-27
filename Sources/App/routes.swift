@@ -47,8 +47,8 @@ enum PackageRoute {
 }
 
 enum StaticPackageRoute: String, CaseIterable {
-//    case builds
-//    case maintainerInfo
+    case builds
+    case maintainerInfo = "information-for-package-maintainers"
     case readme
 //    case releases
 }
@@ -92,14 +92,19 @@ func siteHandler(req: Request, route: SiteRoute) async throws -> AsyncResponseEn
             return try await PackageController
                 .show(req: req, owner: owner, repository: repository)
 
+        case let .package(owner: owner, repository: repository, route: .static(.builds)):
+            return try await PackageController
+                .builds(req: req, owner: owner, repository: repository)
+
+        case let .package(owner: owner, repository: repository, route: .static(.maintainerInfo)):
+            return try await PackageController
+                .maintainerInfo(req: req, owner: owner, repository: repository)
+                .get()
+
         case let .package(owner: owner, repository: repository, route: .static(.readme)):
             return try await PackageController
                 .readme(req: req, owner: owner, repository: repository)
                 .get()
-
-//        case let .package(owner: owner, repository: repository, route: .static(_)):
-//            break
-
     }
 }
 
@@ -111,10 +116,6 @@ func routes(_ app: Application) throws {
         let packageController = PackageController()
         app.get(SiteURL.package(.key, .key, .releases).pathComponents,
                 use: packageController.releases)
-        app.get(SiteURL.package(.key, .key, .builds).pathComponents,
-                use: packageController.builds)
-        app.get(SiteURL.package(.key, .key, .maintainerInfo).pathComponents,
-                use: packageController.maintainerInfo)
     }
 
     do {  // package collection page

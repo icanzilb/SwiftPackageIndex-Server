@@ -50,14 +50,7 @@ struct PackageController {
     }
 
     static func readme(req: Request, owner: String, repository: String) throws -> EventLoopFuture<Node<HTML.BodyContext>> {
-        guard
-            let owner = req.parameters.get("owner"),
-            let repository = req.parameters.get("repository")
-        else {
-            return req.eventLoop.future(error: Abort(.notFound))
-        }
-
-        return Joined<Package, Repository>
+        Joined<Package, Repository>
             .query(on: req.db, owner: owner, repository: repository)
             .flatMap { result in
                 guard let url = result.repository?.readmeHtmlUrl
@@ -84,14 +77,7 @@ struct PackageController {
             .map { PackageReleases.View(model: $0).document() }
     }
 
-    func builds(req: Request) async throws -> HTML {
-        guard
-            let owner = req.parameters.get("owner"),
-            let repository = req.parameters.get("repository")
-        else {
-            throw Abort(.notFound)
-        }
-        
+    static func builds(req: Request, owner: String, repository: String) async throws -> HTML {
         let (packageInfo, buildInfo) = try await BuildsRoute.query(on: req.db,
                                                                    owner: owner,
                                                                    repository: repository)
@@ -102,15 +88,8 @@ struct PackageController {
         return BuildIndex.View(path: req.url.path, model: model).document()
     }
 
-    func maintainerInfo(req: Request) throws -> EventLoopFuture<HTML> {
-        guard
-            let owner = req.parameters.get("owner"),
-            let repository = req.parameters.get("repository")
-        else {
-            return req.eventLoop.future(error: Abort(.notFound))
-        }
-
-        return Joined3<Package, Repository, Version>
+    static func maintainerInfo(req: Request, owner: String, repository: String) throws -> EventLoopFuture<HTML> {
+        Joined3<Package, Repository, Version>
             .query(on: req.db, owner: owner, repository: repository, version: .defaultBranch)
             .field(Version.self, \.$packageName)
             .field(Repository.self, \.$owner)
