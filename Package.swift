@@ -36,6 +36,7 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-parsing.git", from: "0.7.1"),
         .package(name: "SnapshotTesting",
                  url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.7.2"),
+        .package(url: "git@github.com:pointfreeco/vapor-routing.git", from: "0.0.0"),
         .package(url: "https://github.com/SwiftPackageIndex/SemanticVersion", from: "0.3.0"),
         .package(url: "https://github.com/handya/OhhAuth.git", from: "1.4.0"),
         .package(url: "https://github.com/scinfu/SwiftSoup.git", from: "2.3.2"),
@@ -55,7 +56,8 @@ let package = Package(
             "SwiftPrometheus",
             "OhhAuth",
             "SwiftSoup",
-            .product(name: "SwiftPMPackageCollections", package: "SwiftPM")
+            .product(name: "SwiftPMPackageCollections", package: "SwiftPM"),
+            .product(name: "VaporRouting", package: "vapor-routing")
         ]),
         .target(name: "DependencyResolution"),
         .executableTarget(name: "Run", dependencies: ["App"]),

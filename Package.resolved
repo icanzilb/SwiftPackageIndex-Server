@@ -326,6 +326,15 @@
         }
       },
       {
+        "package": "vapor-routing",
+        "repositoryURL": "git@github.com:pointfreeco/vapor-routing.git",
+        "state": {
+          "branch": null,
+          "revision": "231b45ed22d4714a3619d6ab57d1e1a2e84fe819",
+          "version": "0.1.0"
+        }
+      },
+      {
         "package": "websocket-kit",
         "repositoryURL": "https://github.com/vapor/websocket-kit.git",
         "state": {
