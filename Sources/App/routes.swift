@@ -23,13 +23,17 @@ import _URLRouting
 import VaporRouting
 
 enum SiteRoute {
-    case addAPackage
     case docs(DocsRoute)
-    case faq
     case home
-    case packageCollections
+    case `static`(StaticRoute)
+}
+
+enum StaticRoute: String, CaseIterable {
+    case addAPackage = "add-a-package"
+    case faq
+    case packageCollections = "package-collections"
     case privacy
-    case tryInPlayground
+    case tryInPlayground = "try-package"
 }
 
 enum DocsRoute {
@@ -39,11 +43,7 @@ enum DocsRoute {
 let siteRouter = OneOf {
     Route(.case(SiteRoute.home))
 
-    Route(.case(SiteRoute.addAPackage)) { Path { "add-a-package"} }
-    Route(.case(SiteRoute.faq)) { Path { "faq" } }
-    Route(.case(SiteRoute.packageCollections)) { Path { "package-collections" } }
-    Route(.case(SiteRoute.privacy)) { Path { "privacy" } }
-    Route(.case(SiteRoute.tryInPlayground)) { Path { "try-package" } }
+    Route(.case(SiteRoute.static)) { Path { StaticRoute.parser() } }
 
     Route(.case(SiteRoute.docs)) {
         Path { "docs" }
@@ -64,7 +64,7 @@ func siteHandler(req: Request, route: SiteRoute) async throws -> AsyncResponseEn
                 HomeIndex.View(path: req.url.path, model: $0).document()
             }.get()
 
-        case .addAPackage, .docs(.builds), .faq, .packageCollections, .privacy, .tryInPlayground:
+        case .docs(.builds), .static:
             let filename = try siteRouter.print(route).path.joined(separator: "/") + ".md"
             return MarkdownPage(path: req.url.path, filename).document()
     }
