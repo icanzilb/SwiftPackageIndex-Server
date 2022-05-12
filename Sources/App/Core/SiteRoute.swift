@@ -16,16 +16,10 @@ import URLRouting
 import Vapor
 
 
-enum SiteRoute {
-    case docs(DocsRoute)
-    case home
-    case package(PackageRoute)
-    case topLevel(TopLevelRoute)
-}
-
-
 enum DocsRoute: String, CaseIterable {
     case builds
+
+    static let router = Path { "docs"; parser() }
 }
 
 
@@ -49,25 +43,30 @@ enum TopLevelRoute: String, CaseIterable {
     case packageCollections = "package-collections"
     case privacy
     case tryInPlayground = "try-package"
+
+    static let router = Path { parser() }
+}
+
+
+enum SiteRoute {
+    case docs(DocsRoute)
+    case home
+    case package(PackageRoute)
+    case topLevel(TopLevelRoute)
+
+    static let router = OneOf {
+        Route(.case(Self.home))
+
+        Route(.case(Self.docs)) { DocsRoute.router }
+
+        Route(.case(Self.package)) { PackageRoute.router }
+
+        Route(.case(Self.topLevel)) { TopLevelRoute.router }
+    }
 }
 
 
 extension SiteRoute {
-    static let router = OneOf {
-        Route(.case(Self.home))
-
-        Route(.case(Self.docs)) {
-            Path {
-                "docs"
-                DocsRoute.parser()
-            }
-        }
-
-        Route(.case(Self.package)) { PackageRoute.router }
-
-        Route(.case(Self.topLevel)) { Path { TopLevelRoute.parser() } }
-    }
-
     static func handler(req: Request, route: SiteRoute) async throws -> AsyncResponseEncodable {
         switch route {
             case .docs(.builds), .topLevel:
