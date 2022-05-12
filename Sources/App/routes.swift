@@ -17,42 +17,11 @@ import Metrics
 import Plot
 import Prometheus
 import Vapor
+import VaporRouting
 
 
 func routes(_ app: Application) throws {
-    do {  // home page
-        app.get { req in
-            HomeIndex.Model.query(database: req.db).map {
-                HomeIndex.View(path: req.url.path, model: $0).document()
-            }
-        }
-    }
-
-    do {  // static pages
-        app.get(SiteURL.addAPackage.pathComponents) { req in
-            MarkdownPage(path: req.url.path, "add-a-package.md").document()
-        }
-
-        app.get(SiteURL.docs(.builds).pathComponents) { req in
-            MarkdownPage(path: req.url.path, "docs/builds.md").document()
-        }
-
-        app.get(SiteURL.faq.pathComponents) { req in
-            MarkdownPage(path: req.url.path, "faq.md").document()
-        }
-
-        app.get(SiteURL.packageCollections.pathComponents) { req in
-            MarkdownPage(path: req.url.path, "package-collections.md").document()
-        }
-
-        app.get(SiteURL.privacy.pathComponents) { req in
-            MarkdownPage(path: req.url.path, "privacy.md").document()
-        }
-
-        app.get(SiteURL.tryInPlayground.pathComponents) { req in
-            MarkdownPage(path: req.url.path, "try-package.md").document()
-        }
-    }
+    app.mount(SiteRoute.router, use: SiteRoute.handler)
 
     do {  // package pages
         let packageController = PackageController()
@@ -155,7 +124,7 @@ func routes(_ app: Application) throws {
             protected.post(SiteURL.api(.packages(.key, .key, .triggerBuilds)).pathComponents,
                            use: packageController.triggerBuilds)
         }
-        
+
         // sas: 2020-05-19: shut down public API until we have an auth mechanism
         //  let apiPackageController = API.PackageController()
         //  api.get("packages", use: apiPackageController.index)
@@ -166,13 +135,13 @@ func routes(_ app: Application) throws {
         //
         //  api.get("packages", "run", ":command", use: apiPackageController.run)
     }
-    
+
     do {  // RSS + Sitemap
         app.get(SiteURL.rssPackages.pathComponents) { req in
             RSSFeed.recentPackages(on: req.db, limit: Constants.rssFeedMaxItemCount)
                 .map { $0.rss }
         }
-        
+
         app.get(SiteURL.rssReleases.pathComponents) { req -> EventLoopFuture<RSS> in
             var filter: RecentRelease.Filter = []
             for param in ["major", "minor", "patch", "pre"] {
@@ -186,7 +155,7 @@ func routes(_ app: Application) throws {
                                           filter: filter)
                 .map { $0.rss }
         }
-        
+
         app.get(SiteURL.siteMap.pathComponents) { req in
             SiteMap.fetchPackages(req.db)
                 .map(SiteURL.siteMap)
