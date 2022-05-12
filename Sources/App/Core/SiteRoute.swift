@@ -19,12 +19,27 @@ import Vapor
 enum SiteRoute {
     case docs(DocsRoute)
     case home
+    case package(PackageRoute)
     case topLevel(TopLevelRoute)
 }
 
 
 enum DocsRoute: String, CaseIterable {
     case builds
+}
+
+
+enum PackageRoute {
+    case show(owner: String, repository: String)
+
+    static let router = OneOf {
+        Route(.case(Self.show(owner:repository:))) {
+            Path {
+                Parse(.string)
+                Parse(.string)
+            }
+        }
+    }
 }
 
 
@@ -39,16 +54,18 @@ enum TopLevelRoute: String, CaseIterable {
 
 extension SiteRoute {
     static let router = OneOf {
-        Route(.case(SiteRoute.home))
+        Route(.case(Self.home))
 
-        Route(.case(SiteRoute.docs)) {
+        Route(.case(Self.docs)) {
             Path {
                 "docs"
                 DocsRoute.parser()
             }
         }
 
-        Route(.case(SiteRoute.topLevel)) { Path { TopLevelRoute.parser() } }
+        Route(.case(Self.package)) { PackageRoute.router }
+
+        Route(.case(Self.topLevel)) { Path { TopLevelRoute.parser() } }
     }
 
     static func handler(req: Request, route: SiteRoute) async throws -> AsyncResponseEncodable {
@@ -61,6 +78,10 @@ extension SiteRoute {
                 return try await HomeIndex.Model.query(database: req.db).map {
                     HomeIndex.View(path: req.url.path, model: $0).document()
                 }.get()
+
+            case let .package(.show(owner: owner, repository: repository)):
+                return try await PackageController()
+                    .show(req: req, owner: owner, repository: repository)
         }
     }
 }
