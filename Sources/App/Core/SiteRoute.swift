@@ -24,15 +24,10 @@ enum DocsRoute: String, CaseIterable {
 
 
 enum PackageRoute {
-    case show(owner: String, repository: String)
+    case show
 
     static let router = OneOf {
-        Route(.case(Self.show(owner:repository:))) {
-            Path {
-                Parse(.string)
-                Parse(.string)
-            }
-        }
+        Route(.case(Self.show))
     }
 }
 
@@ -51,7 +46,7 @@ enum TopLevelRoute: String, CaseIterable {
 enum SiteRoute {
     case docs(DocsRoute)
     case home
-    case package(PackageRoute)
+    case package(owner: String, repository: String, route: PackageRoute = .show)
     case topLevel(TopLevelRoute)
 
     static let router = OneOf {
@@ -59,7 +54,11 @@ enum SiteRoute {
 
         Route(.case(Self.docs)) { DocsRoute.router }
 
-        Route(.case(Self.package)) { PackageRoute.router }
+        Route(.case(Self.package(owner:repository:route:))) {
+            Path { Parse(.string) }
+            Path { Parse(.string) }
+            PackageRoute.router
+        }
 
         Route(.case(Self.topLevel)) { TopLevelRoute.router }
     }
@@ -78,7 +77,7 @@ extension SiteRoute {
                     HomeIndex.View(path: req.url.path, model: $0).document()
                 }.get()
 
-            case let .package(.show(owner: owner, repository: repository)):
+            case let .package(owner: owner, repository: repository, route: .show):
                 return try await PackageController()
                     .show(req: req, owner: owner, repository: repository)
         }
