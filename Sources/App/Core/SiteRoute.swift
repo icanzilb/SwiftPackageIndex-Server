@@ -24,18 +24,21 @@ enum DocsRoute: String, CaseIterable {
 
 
 enum PackageRoute {
-    case builds
-    case maintainerInfo
-    case readme
-    case releases
     case show
+    case staticPath(StaticPathRoute)
 
     static let router = OneOf {
-        Route(.case(Self.builds)) { Path { "builds" } }
-        Route(.case(Self.maintainerInfo)) { Path { "information-for-package-maintainers" } }
-        Route(.case(Self.readme)) { Path { "readme" } }
-        Route(.case(Self.releases)) { Path { "releases" } }
         Route(.case(Self.show))
+        Route(.case(Self.staticPath)) { StaticPathRoute.router }
+    }
+
+    enum StaticPathRoute: String, CaseIterable {
+        case builds
+        case maintainerInfo = "information-for-package-maintainers"
+        case readme
+        case releases
+
+        static let router = Path { parser() }
     }
 }
 
@@ -85,21 +88,21 @@ extension SiteRoute {
                     HomeIndex.View(path: req.url.path, model: $0).document()
                 }.get()
 
-            case let .package(owner: owner, repository: repository, route: .builds):
+            case let .package(owner: owner, repository: repository, route: .staticPath(.builds)):
                 return try await PackageController
                     .builds(req: req, owner: owner, repository: repository)
 
-            case let .package(owner: owner, repository: repository, route: .maintainerInfo):
+            case let .package(owner: owner, repository: repository, route: .staticPath(.maintainerInfo)):
                 return try await PackageController
                     .maintainerInfo(req: req, owner: owner, repository: repository)
                     .get()
 
-            case let .package(owner: owner, repository: repository, route: .readme):
+            case let .package(owner: owner, repository: repository, route: .staticPath(.readme)):
                 return try await PackageController
                     .readme(req: req, owner: owner, repository: repository)
                     .get()
 
-            case let .package(owner: owner, repository: repository, route: .releases):
+            case let .package(owner: owner, repository: repository, route: .staticPath(.releases)):
                 return try await PackageController
                     .releases(req: req, owner: owner, repository: repository)
 
