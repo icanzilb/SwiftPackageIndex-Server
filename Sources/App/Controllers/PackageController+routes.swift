@@ -17,7 +17,7 @@ import Plot
 import Vapor
 
 
-struct PackageController {
+enum PackageController {
 
     static func show(req: Request, owner: String, repository: String) async throws -> Response {
         if repository.lowercased().hasSuffix(".git") {
@@ -69,7 +69,7 @@ struct PackageController {
         }
     }
 
-    func documentation(req: Request, fragment: Fragment) async throws -> Response {
+    static func documentation(req: Request, fragment: Fragment) async throws -> Response {
         guard
             let owner = req.parameters.get("owner"),
             let repository = req.parameters.get("repository"),
