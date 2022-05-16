@@ -43,22 +43,11 @@ enum PackageRoute {
 }
 
 
-enum TopLevelRoute: String, CaseIterable {
-    case addAPackage = "add-a-package"
-    case faq
-    case packageCollections = "package-collections"
-    case privacy
-    case tryInPlayground = "try-package"
-
-    static let router = Path { parser() }
-}
-
-
 enum SiteRoute {
     case docs(DocsRoute)
     case home
     case package(owner: String, repository: String, route: PackageRoute = .show)
-    case topLevel(TopLevelRoute)
+    case staticPath(StaticPathRoute)
 
     static let router = OneOf {
         Route(.case(Self.home))
@@ -71,7 +60,17 @@ enum SiteRoute {
             PackageRoute.router
         }
 
-        Route(.case(Self.topLevel)) { TopLevelRoute.router }
+        Route(.case(Self.staticPath)) { StaticPathRoute.router }
+    }
+
+    enum StaticPathRoute: String, CaseIterable {
+        case addAPackage = "add-a-package"
+        case faq
+        case packageCollections = "package-collections"
+        case privacy
+        case tryInPlayground = "try-package"
+
+        static let router = Path { parser() }
     }
 }
 
@@ -79,7 +78,7 @@ enum SiteRoute {
 extension SiteRoute {
     static func handler(req: Request, route: SiteRoute) async throws -> AsyncResponseEncodable {
         switch route {
-            case .docs(.builds), .topLevel:
+            case .docs(.builds), .staticPath:
                 let filename = try router.print(route).path.joined(separator: "/") + ".md"
                 return MarkdownPage(path: req.url.path, filename).document()
 
