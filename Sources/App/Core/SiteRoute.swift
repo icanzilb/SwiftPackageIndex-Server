@@ -88,27 +88,41 @@ extension SiteRoute {
                     HomeIndex.View(path: req.url.path, model: $0).document()
                 }.get()
 
-            case let .package(owner: owner, repository: repository, route: .staticPath(.builds)):
-                return try await PackageController
-                    .builds(req: req, owner: owner, repository: repository)
+            case let .package(owner: owner, repository: repository, route: packageRoute):
+                return try await PackageRoute.handler(req: req, owner: owner, repository: repository, route: packageRoute)
 
-            case let .package(owner: owner, repository: repository, route: .staticPath(.maintainerInfo)):
-                return try await PackageController
-                    .maintainerInfo(req: req, owner: owner, repository: repository)
-                    .get()
+        }
+    }
+}
 
-            case let .package(owner: owner, repository: repository, route: .staticPath(.readme)):
-                return try await PackageController
-                    .readme(req: req, owner: owner, repository: repository)
-                    .get()
 
-            case let .package(owner: owner, repository: repository, route: .staticPath(.releases)):
-                return try await PackageController
-                    .releases(req: req, owner: owner, repository: repository)
-
-            case let .package(owner: owner, repository: repository, route: .show):
+extension PackageRoute {
+    static func handler(req: Request, owner: String, repository: String, route: PackageRoute) async throws -> AsyncResponseEncodable {
+        switch route {
+            case .show:
                 return try await PackageController
                     .show(req: req, owner: owner, repository: repository)
+
+            case .staticPath(let staticPathRoute):
+                switch staticPathRoute {
+                    case .builds:
+                        return try await PackageController
+                            .builds(req: req, owner: owner, repository: repository)
+
+                    case .maintainerInfo:
+                        return try await PackageController
+                            .maintainerInfo(req: req, owner: owner, repository: repository)
+                            .get()
+
+                    case .readme:
+                        return try await PackageController
+                            .readme(req: req, owner: owner, repository: repository)
+                            .get()
+
+                    case .releases:
+                        return try await PackageController
+                            .releases(req: req, owner: owner, repository: repository)
+                }
         }
     }
 }
