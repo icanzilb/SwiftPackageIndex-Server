@@ -23,38 +23,6 @@ import VaporRouting
 func routes(_ app: Application) throws {
     app.mount(SiteRoute.router, use: SiteRoute.handler)
 
-    do {  // package pages
-        do {  // temporary, hacky docc-proxy
-            app.get(":owner", ":repository", ":reference", "documentation") {
-                try await PackageController.documentation(req: $0, fragment: .documentation)
-            }
-            app.get(":owner", ":repository", ":reference", "documentation", "**") {
-                try await PackageController.documentation(req: $0, fragment: .documentation)
-            }
-            app.get(":owner", ":repository", ":reference", "css") {
-                try await PackageController.documentation(req: $0, fragment: .css)
-            }
-            app.get(":owner", ":repository", ":reference", "css", "**") {
-                try await PackageController.documentation(req: $0, fragment: .css)
-            }
-            app.get(":owner", ":repository", ":reference", "data") {
-                try await PackageController.documentation(req: $0, fragment: .data)
-            }
-            app.get(":owner", ":repository", ":reference", "data", "**") {
-                try await PackageController.documentation(req: $0, fragment: .data)
-            }
-            app.get(":owner", ":repository", ":reference", "js") {
-                try await PackageController.documentation(req: $0, fragment: .js)
-            }
-            app.get(":owner", ":repository", ":reference", "js", "**") {
-                try await PackageController.documentation(req: $0, fragment: .js)
-            }
-            app.get(":owner", ":repository", ":reference", "theme-settings.json") {
-                try await PackageController.documentation(req: $0, fragment: .themeSettings)
-            }
-        }
-    }
-
     do {  // package collection page
         app.get(SiteURL.packageCollection(.key).pathComponents,
                 use: PackageCollectionController().generate)

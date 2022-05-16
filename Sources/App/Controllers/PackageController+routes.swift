@@ -48,38 +48,12 @@ enum PackageController {
         }
     }
 
-    enum Fragment: String {
-        case css
-        case data
-        case documentation
-        case js
-        case themeSettings
-
-        var contentType: String {
-            switch self {
-                case .css:
-                    return "text/css"
-                case .data, .themeSettings:
-                    return "application/octet-stream"
-                case .documentation:
-                    return "text/html; charset=utf-8"
-                case .js:
-                    return "application/javascript"
-            }
-        }
-    }
-
-    static func documentation(req: Request, fragment: Fragment) async throws -> Response {
-        guard
-            let owner = req.parameters.get("owner"),
-            let repository = req.parameters.get("repository"),
-            let reference = req.parameters.get("reference")
-        else {
-            throw Abort(.notFound)
-        }
-
-        let path = req.parameters.getCatchall().joined(separator: "/")
-
+    static func documentation(req: Request,
+                              owner: String,
+                              repository: String,
+                              reference: String,
+                              fragment: PackageRoute.DocumentationFragment,
+                              path: [String]) async throws -> Response {
         let url = try Self.awsDocumentationURL(owner: owner, repository: repository, reference: reference, fragment: fragment, path: path)
         let res = try await Current.fetchDocumentation(req.client, url)
         guard (200..<399).contains(res.status.code) else {
@@ -231,19 +205,20 @@ extension PackageController {
 
 
 extension PackageController {
-    static func awsDocumentationURL(owner: String, repository: String, reference: String, fragment: Fragment, path: String) throws -> URI {
+    static func awsDocumentationURL(owner: String,
+                                    repository: String,
+                                    reference: String,
+                                    fragment: PackageRoute.DocumentationFragment,
+                                    path: [String]) throws -> URI {
         guard let bucket = Current.awsDocsBucket() else {
             throw AppError.envVariableNotSet("AWS_DOCS_BUCKET")
         }
 
-        let baseURL = "http://\(bucket).s3-website.us-east-2.amazonaws.com/\(owner)/\(repository)/\(reference)"
+        let path = path.isEmpty
+        ? ""
+        : "/" + path.joined(separator: "/")
 
-        switch fragment {
-            case .css, .data, .documentation, .js:
-                return URI(string: "\(baseURL)/\(fragment)/\(path)")
-            case .themeSettings:
-                return URI(string: "\(baseURL)/theme-settings.json")
-        }
+        return "http://\(bucket).s3-website.us-east-2.amazonaws.com/\(owner)/\(repository)/\(reference)/\(fragment.rawValue)\(path)"
     }
 }
 
@@ -253,5 +228,21 @@ private extension HTTPHeaders {
         var headers = self
         headers.replaceOrAdd(name: name, value: value)
         return headers
+    }
+}
+
+
+private extension PackageRoute.DocumentationFragment {
+    var contentType: String {
+        switch self {
+            case .css:
+                return "text/css"
+            case .data, .themeSettings:
+                return "application/octet-stream"
+            case .documentation:
+                return "text/html; charset=utf-8"
+            case .js:
+                return "application/javascript"
+        }
     }
 }

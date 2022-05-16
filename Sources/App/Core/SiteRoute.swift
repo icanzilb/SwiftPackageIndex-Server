@@ -24,12 +24,26 @@ enum DocsRoute: String, CaseIterable {
 
 
 enum PackageRoute {
+    case documentation(reference: String, fragment: DocumentationFragment, path: [String])
     case show
     case staticPath(StaticPathRoute)
 
     static let router = OneOf {
+        Route(.case(Self.documentation)) {
+            Path { Parse(.string) }
+            Path { DocumentationFragment.parser() }
+            Many { Path { Parse(.string) } }
+        }
         Route(.case(Self.show))
         Route(.case(Self.staticPath)) { StaticPathRoute.router }
+    }
+
+    enum DocumentationFragment: String, CaseIterable {
+        case css
+        case data
+        case documentation
+        case js
+        case themeSettings = "theme-settings.json"
     }
 
     enum StaticPathRoute: String, CaseIterable {
@@ -98,6 +112,9 @@ extension SiteRoute {
 extension PackageRoute {
     static func handler(req: Request, owner: String, repository: String, route: PackageRoute) async throws -> AsyncResponseEncodable {
         switch route {
+            case let .documentation(reference: reference, fragment: fragment, path: path):
+                return try await PackageController.documentation(req: req, owner: owner, repository: repository, reference: reference, fragment: fragment, path: path)
+
             case .show:
                 return try await PackageController
                     .show(req: req, owner: owner, repository: repository)
