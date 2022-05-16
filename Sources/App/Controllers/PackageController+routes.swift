@@ -155,14 +155,7 @@ struct PackageController {
             .map { PackageReleases.View(model: $0).document() }
     }
 
-    func builds(req: Request) async throws -> HTML {
-        guard
-            let owner = req.parameters.get("owner"),
-            let repository = req.parameters.get("repository")
-        else {
-            throw Abort(.notFound)
-        }
-        
+    static func builds(req: Request, owner: String, repository: String) async throws -> HTML {
         let (packageInfo, buildInfo) = try await BuildsRoute.query(on: req.db,
                                                                    owner: owner,
                                                                    repository: repository)

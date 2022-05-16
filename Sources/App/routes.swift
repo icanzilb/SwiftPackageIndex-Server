@@ -58,8 +58,6 @@ func routes(_ app: Application) throws {
 
         app.get(SiteURL.package(.key, .key, .releases).pathComponents,
                 use: packageController.releases)
-        app.get(SiteURL.package(.key, .key, .builds).pathComponents,
-                use: packageController.builds)
     }
 
     do {  // package collection page

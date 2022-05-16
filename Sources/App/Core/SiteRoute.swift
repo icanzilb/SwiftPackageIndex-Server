@@ -24,11 +24,13 @@ enum DocsRoute: String, CaseIterable {
 
 
 enum PackageRoute {
+    case builds
     case maintainerInfo
     case readme
     case show
 
     static let router = OneOf {
+        Route(.case(Self.builds)) { Path { "builds" } }
         Route(.case(Self.maintainerInfo)) { Path { "information-for-package-maintainers" } }
         Route(.case(Self.readme)) { Path { "readme" } }
         Route(.case(Self.show))
@@ -80,6 +82,10 @@ extension SiteRoute {
                 return try await HomeIndex.Model.query(database: req.db).map {
                     HomeIndex.View(path: req.url.path, model: $0).document()
                 }.get()
+
+            case let .package(owner: owner, repository: repository, route: .builds):
+                return try await PackageController
+                    .builds(req: req, owner: owner, repository: repository)
 
             case let .package(owner: owner, repository: repository, route: .maintainerInfo):
                 return try await PackageController
