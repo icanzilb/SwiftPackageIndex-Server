@@ -18,8 +18,6 @@ import Vapor
 
 enum DocsRoute: String, CaseIterable {
     case builds
-
-    static let router = Path { "docs"; parser() }
 }
 
 
@@ -35,7 +33,7 @@ enum PackageRoute {
             Many { Path { Parse(.string) } }
         }
         Route(.case(Self.show))
-        Route(.case(Self.staticPath)) { StaticPathRoute.router }
+        Route(.case(Self.staticPath)) { Path { StaticPathRoute.parser() } }
     }
 
     enum DocumentationFragment: String, CaseIterable {
@@ -51,8 +49,6 @@ enum PackageRoute {
         case maintainerInfo = "information-for-package-maintainers"
         case readme
         case releases
-
-        static let router = Path { parser() }
     }
 }
 
@@ -66,7 +62,7 @@ enum SiteRoute {
     static let router = OneOf {
         Route(.case(Self.home))
 
-        Route(.case(Self.docs)) { DocsRoute.router }
+        Route(.case(Self.docs)) { Path { "docs"; DocsRoute.parser() } }
 
         Route(.case(Self.package(owner:repository:route:))) {
             Path { Parse(.string) }
@@ -74,7 +70,7 @@ enum SiteRoute {
             PackageRoute.router
         }
 
-        Route(.case(Self.staticPath)) { StaticPathRoute.router }
+        Route(.case(Self.staticPath)) { Path { StaticPathRoute.parser() } }
     }
 
     enum StaticPathRoute: String, CaseIterable {
@@ -83,8 +79,6 @@ enum SiteRoute {
         case packageCollections = "package-collections"
         case privacy
         case tryInPlayground = "try-package"
-
-        static let router = Path { parser() }
     }
 }
 
