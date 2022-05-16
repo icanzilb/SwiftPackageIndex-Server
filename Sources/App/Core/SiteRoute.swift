@@ -27,12 +27,14 @@ enum PackageRoute {
     case builds
     case maintainerInfo
     case readme
+    case releases
     case show
 
     static let router = OneOf {
         Route(.case(Self.builds)) { Path { "builds" } }
         Route(.case(Self.maintainerInfo)) { Path { "information-for-package-maintainers" } }
         Route(.case(Self.readme)) { Path { "readme" } }
+        Route(.case(Self.releases)) { Path { "releases" } }
         Route(.case(Self.show))
     }
 }
@@ -96,6 +98,10 @@ extension SiteRoute {
                 return try await PackageController
                     .readme(req: req, owner: owner, repository: repository)
                     .get()
+
+            case let .package(owner: owner, repository: repository, route: .releases):
+                return try await PackageController
+                    .releases(req: req, owner: owner, repository: repository)
 
             case let .package(owner: owner, repository: repository, route: .show):
                 return try await PackageController

@@ -141,18 +141,12 @@ struct PackageController {
             .map { $0.document() }
     }
     
-    func releases(req: Request) throws -> EventLoopFuture<Node<HTML.BodyContext>> {
-        guard
-            let owner = req.parameters.get("owner"),
-            let repository = req.parameters.get("repository")
-        else {
-            return req.eventLoop.future(error: Abort(.notFound))
-        }
-
-        return Joined<Package, Repository>
+    static func releases(req: Request, owner: String, repository: String) async throws -> Node<HTML.BodyContext> {
+        try await Joined<Package, Repository>
             .query(on: req.db, owner: owner, repository: repository)
             .map(PackageReleases.Model.init(package:))
             .map { PackageReleases.View(model: $0).document() }
+            .get()
     }
 
     static func builds(req: Request, owner: String, repository: String) async throws -> HTML {

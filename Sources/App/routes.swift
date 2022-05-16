@@ -55,9 +55,6 @@ func routes(_ app: Application) throws {
                 try await packageController.documentation(req: $0, fragment: .themeSettings)
             }
         }
-
-        app.get(SiteURL.package(.key, .key, .releases).pathComponents,
-                use: packageController.releases)
     }
 
     do {  // package collection page
