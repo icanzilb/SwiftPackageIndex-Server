@@ -277,11 +277,8 @@ func insertOrUpdateRepository(on database: Database,
 func ingestFromS3(database: Database,
                   logger: Logger,
                   packageIDs: [Package.Id]) async throws {
-#warning("FIXME: temporary bucket override to point ingestion at prod bucket")
-    let awsBucketName = "spi-prod-docs"
-
     guard let awsAccessKeyId = Current.awsAccessKeyId(),
-          //          let awsBucketName = Current.awsDocsBucket(),
+          let awsBucketName = Current.awsDocsBucket(),
           let awsSecretAccessKey = Current.awsSecretAccessKey() else {
         logger.critical("AWS variable(s) unset.")
         return
